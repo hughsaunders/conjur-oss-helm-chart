@@ -65,6 +65,14 @@ replicaCount: 1
 #  memory: 128Mi
 resources: {}
 
+# The default service configuration is an internal service NodePort
+# service, with an external LoadBalancer service to expose it.
+# The external LB uses a self signed cert.
+
+# An alternative is to use an ingress, with cert-manager to get
+# automated trusted certificates. See e2e/install-cert-manager.sh
+# for information on deploying cert manager.
+
 service:
   external:
     annotations:
@@ -77,6 +85,13 @@ service:
     port: 443
     type: NodePort
 
+ingress:
+  enabled: false
+  issuer: letsencrypt-staging
+  class: nginx
+
+# Configuration for generation of self signed certificates
+# These are used by default when the external LB service is enabled.
 ssl:
   expiration: 365 # days
   hostname: "conjur.myorg.com"

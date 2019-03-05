@@ -1,0 +1,33 @@
+{{- if .Values.ingress.enabled -}}
+{{- $fullName := include "conjur-oss.fullname" . -}}
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: {{ $fullName }}-ingress
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.ingress.class }}
+    certmanager.k8s.io/issuer: {{ .Values.ingress.issuer }}
+    certmanager.k8s.io/acme-challenge-type: http01
+  labels:
+    app: {{ template "conjur-oss.name" . }}
+    chart: {{ template "conjur-oss.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    app.kubernetes.io/name: {{ .Release.Name }}
+    app.kubernetes.io/component: ingress
+
+spec:
+  tls:
+  - hosts:
+    - {{ .Values.ssl.hostname }}
+    secretName: {{ .Values.ssl.hostname }}-tls
+  rules:
+  - host: {{ .Values.ssl.hostname }}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: {{ template "conjur-oss.fullname" . }}
+          servicePort: {{ .Values.service.internal.port }}
+{{ end }}

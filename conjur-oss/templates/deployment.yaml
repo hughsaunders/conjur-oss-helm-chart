@@ -50,6 +50,7 @@ spec:
               path: sites-enabled/conjur.conf
 
       containers:
+      {{- if .Values.service.external.enabled }}
       - name: {{ .Release.Name }}-nginx
         image: "{{ .Values.nginx.image.repository }}:{{ .Values.nginx.image.tag }}"
         imagePullPolicy: {{ .Values.nginx.image.pullPolicy }}
@@ -88,6 +89,7 @@ spec:
         - name: {{ .Release.Name }}-conjur-configmap-volume
           mountPath: /etc/nginx
           readOnly: true
+      {{- end }}
 
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

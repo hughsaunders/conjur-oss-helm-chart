@@ -1,5 +1,7 @@
+{{ if .Values.service.external.enabled }}
 {{- $ssl := . }}
 {{- include "conjur-oss.ssl-cert-gen" $ssl }}
+
 apiVersion: v1
 kind: Secret
 metadata:
@@ -37,3 +39,5 @@ type: kubernetes.io/tls
 data:
   tls.crt: {{ .certCrt }}
   tls.key: {{ .certKey }}
+
+{{ end }}

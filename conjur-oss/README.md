@@ -82,6 +82,59 @@ $ kubectl exec $POD_NAME --container=conjur-oss conjurctl account create example
 
 The chart value for `account` would be expected to equal `example`.
 
+## TLS with Lets Encrypt
+Conjur can be deployed using a lets encrypt certificate.
+
+### Prerequisites
+1. An ingress controller. This method has been tested with nginx but may also
+   work with others. If you don't have an ingress controller, you can deploy the
+   nginx ingress controller with:
+   ```shell
+   helm install stable/nginx-ingress --name nginx-ingress
+   ```
+1. A public wildcard DNS entry pointing at the ingress controller's IP. Cert manager
+   will create temporary pods to prove domain ownership, this process will fail
+   if the DNS record doesn't already exist.
+1. [cert-manager](https://github.com/jetstack/cert-manager). This is a
+   kubernetes service that manages certificates. It speaks the [Let's Encrypt
+   ACME protocol](https://letsencrypt.org/how-it-works/), and hooks into ingress
+   resource lifecycle events so that certs are created when required. If
+   cert-manager is not already configured in your cluster, you can use the
+   included script:
+   ```shell
+   email="your.account@your.provider" ./conjur-oss/e2e/install-cert-manager.sh
+   ```
+1. Custom values file. This should disable the external service, enable the
+   ingress object specifying the relevant issuer, and specify the hostname to
+   use for certificates. Note that the cert-manager install script creates two
+   issuers letsencrypt-staging and letsencrypt-production. Production has strict
+   rate limits but also is widely trusted. Staging has more generous limits but
+   is not trusted. If you deployed cert-manager independently, you can get a
+   list of issuers with:
+   ```shell
+   kubectl get issuer
+   ```
+   Example custom values file:
+   ```yaml
+    service:
+      external:
+        enabled: false
+    ingress:
+      enabled: true
+      issuer: letsencrypt-production
+    ssl:
+      hostname: "conjur.myorg.com"
+   ```
+   These values can be combined with the values specified above in the custom deployment section.
+
+Once the above is in place, the chart can be deployed as before, but referencing the custom values file:
+```shell
+helm install \
+  -f custom-values.yaml
+  --set dataKey="$(docker run --rm cyberark/conjur data-key generate)" \
+  https://github.com/cyberark/conjur-oss-helm-chart/releases/download/v<VERSION>/conjur-oss-<VERSION>.tgz
+```
+
 ## Uninstalling the Chart
 
 To uninstall/delete the `my-release` deployment:
